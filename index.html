@@ -25,38 +25,43 @@
         /* --- LOGIN SCREEN --- */
         #login-screen { flex-direction: column; justify-content: center; align-items: center; background: #111; }
         .auth-box { background: var(--sidebar-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border); width: 300px; text-align: center; }
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 4px; }
-        button.primary { background: var(--accent); color: white; border: none; padding: 10px; width: 100%; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        button.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); margin-top: 10px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 4px; outline: none; }
+        input:focus { border-color: var(--accent); }
+        button.primary { background: var(--accent); color: white; border: none; padding: 10px; width: 100%; cursor: pointer; margin-top: 10px; font-weight: bold; border-radius: 4px; }
+        button.primary:hover { background: #0062a3; }
+        button.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); margin-top: 10px; border-radius: 4px; cursor: pointer; }
         
         /* --- DASHBOARD --- */
         #dashboard-screen { flex-direction: column; padding: 40px; overflow-y: auto; }
-        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .project-card { background: var(--sidebar-bg); padding: 20px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .project-card { background: var(--sidebar-bg); padding: 20px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; transition: 0.2s; position: relative; }
         .project-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .project-card h3 { margin-top: 0; color: var(--accent); }
+        .project-card p { font-size: 12px; color: #888; }
 
-        /* --- EDITOR LAYOUT (VS Code Style) --- */
+        /* --- EDITOR LAYOUT --- */
         #editor-screen { flex-direction: row; }
-        .activity-bar { width: 50px; background: #333; display: flex; flex-direction: column; align-items: center; pt: 10px; }
+        .activity-bar { width: 50px; background: #333; display: flex; flex-direction: column; align-items: center; padding-top: 10px; }
         .activity-icon { font-size: 24px; color: #858585; margin: 15px 0; cursor: pointer; }
         .activity-icon:hover { color: white; }
         
         .sidebar { width: 200px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .file-item { padding: 8px 15px; cursor: pointer; font-size: 13px; display: flex; align-items: center; }
+        .file-item { padding: 8px 15px; cursor: pointer; font-size: 13px; display: flex; align-items: center; color: #ccc; }
         .file-item:hover { background: #37373d; }
         .file-item.active { background: #37373d; color: white; border-left: 2px solid var(--accent); }
+        .file-icon { margin-right: 8px; font-size: 16px; }
 
         .editor-main { flex: 1; display: flex; flex-direction: column; }
         .code-area { flex: 1; position: relative; }
-        .CodeMirror { height: 100%; font-size: 14px; }
+        .CodeMirror { height: 100%; font-size: 14px; font-family: 'Consolas', monospace; }
         .code-container { display: none; height: 100%; }
         .code-container.active { display: block; }
 
         /* --- FULLSCREEN PREVIEW --- */
         #fullscreen-screen { flex-direction: column; background: white; }
-        .fs-nav { height: 40px; background: #333; display: flex; align-items: center; padding: 0 15px; }
-        .fs-title { color: white; font-weight: bold; margin-left: 20px; }
+        .fs-nav { height: 40px; background: #333; display: flex; align-items: center; padding: 0 15px; justify-content: space-between; }
+        .fs-title { color: white; font-weight: bold; }
         iframe { flex: 1; border: none; width: 100%; height: 100%; }
 
     </style>
@@ -64,23 +69,26 @@
 <body>
 
     <div id="login-screen" class="screen active">
-        <h1 style="color:var(--accent)">DevStudio</h1>
+        <h1 style="color:var(--accent); margin-bottom: 20px;">DevStudio Local</h1>
         <div class="auth-box">
-            <h2 id="auth-title">Login</h2>
+            <h2 id="auth-title" style="margin-top:0">Login</h2>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
             <button class="primary" onclick="handleAuth()">Submit</button>
             <p style="font-size:12px; margin-top:15px; cursor:pointer; color:#888" onclick="toggleAuthMode()" id="auth-toggle">Need an account? Register</p>
+            <p id="auth-error" style="color: #ff4d4d; font-size: 12px; margin-top: 10px;"></p>
         </div>
     </div>
 
     <div id="dashboard-screen" class="screen">
         <div class="dash-header">
-            <h1>Community Projects</h1>
             <div>
-                <span id="welcome-msg" style="margin-right: 20px;"></span>
-                <button class="primary" style="width:auto; padding: 10px 20px;" onclick="openEditor()">+ New Project</button>
-                <button class="secondary" style="width:auto; padding: 10px 20px;" onclick="logout()">Logout</button>
+                <h1 style="margin:0;">My Projects</h1>
+                <span id="welcome-msg" style="color: #888; font-size: 14px;"></span>
+            </div>
+            <div>
+                <button class="primary" style="width:auto; padding: 8px 20px;" onclick="openEditor()">+ New Project</button>
+                <button class="secondary" style="width:auto; padding: 8px 20px;" onclick="logout()">Logout</button>
             </div>
         </div>
         <div id="project-list" class="project-grid"></div>
@@ -88,15 +96,21 @@
 
     <div id="editor-screen" class="screen">
         <div class="activity-bar">
-            <span class="material-icons activity-icon" onclick="showDashboard()">home</span>
-            <span class="material-icons activity-icon" onclick="publishProject()">cloud_upload</span>
-            <span class="material-icons activity-icon" onclick="runPreview()">play_arrow</span>
+            <span class="material-icons activity-icon" onclick="showDashboard()" title="Home">home</span>
+            <span class="material-icons activity-icon" onclick="publishProject()" title="Publish">cloud_upload</span>
+            <span class="material-icons activity-icon" onclick="runPreview()" title="Run Preview">play_arrow</span>
         </div>
         <div class="sidebar">
             <div style="padding:10px; font-weight:bold; font-size:11px; color:#aaa;">EXPLORER</div>
-            <div class="file-item active" id="f-html" onclick="switchTab('html')">index.html</div>
-            <div class="file-item" id="f-css" onclick="switchTab('css')">style.css</div>
-            <div class="file-item" id="f-js" onclick="switchTab('js')">script.js</div>
+            <div class="file-item active" id="f-html" onclick="switchTab('html')">
+                <span class="material-icons file-icon" style="color:#e34c26">code</span> index.html
+            </div>
+            <div class="file-item" id="f-css" onclick="switchTab('css')">
+                <span class="material-icons file-icon" style="color:#563d7c">tag</span> style.css
+            </div>
+            <div class="file-item" id="f-js" onclick="switchTab('js')">
+                <span class="material-icons file-icon" style="color:#f1e05a">javascript</span> script.js
+            </div>
         </div>
         <div class="editor-main">
             <div class="code-area">
@@ -109,8 +123,8 @@
 
     <div id="fullscreen-screen" class="screen">
         <div class="fs-nav">
-            <button class="primary" style="width:auto; padding:5px 15px;" onclick="showDashboard()">← Back</button>
             <span class="fs-title" id="fs-project-title">Project Name</span>
+            <button class="primary" style="width:auto; padding:5px 15px; font-size:12px;" onclick="showDashboard()">Close Preview</button>
         </div>
         <iframe id="fullscreen-frame"></iframe>
     </div>
@@ -125,44 +139,70 @@
         let currentUser = null;
         let isRegistering = false;
         
-        // EDITORS
+        // EDITORS INITIALIZATION
         const conf = { theme: 'vscode-dark', lineNumbers: true };
         const htmlEd = CodeMirror.fromTextArea(document.getElementById('html-code'), {...conf, mode: 'xml'});
         const cssEd = CodeMirror.fromTextArea(document.getElementById('css-code'), {...conf, mode: 'css'});
         const jsEd = CodeMirror.fromTextArea(document.getElementById('js-code'), {...conf, mode: 'javascript'});
 
         // --- AUTH LOGIC ---
+
+        // Check if user is already logged in (Persistent Session)
+        window.onload = function() {
+            const savedUser = localStorage.getItem('devstudio_user');
+            if (savedUser) {
+                currentUser = savedUser;
+                showDashboard();
+            }
+        };
+
         function toggleAuthMode() {
             isRegistering = !isRegistering;
-            document.getElementById('auth-title').innerText = isRegistering ? "Register" : "Login";
+            document.getElementById('auth-title').innerText = isRegistering ? "Register Account" : "Login";
             document.getElementById('auth-toggle').innerText = isRegistering ? "Have an account? Login" : "Need an account? Register";
+            document.getElementById('auth-error').innerText = "";
         }
 
         async function handleAuth() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
+            const errBox = document.getElementById('auth-error');
+            
+            if(!u || !p) {
+                errBox.innerText = "Please enter both username and password.";
+                return;
+            }
+
             const endpoint = isRegistering ? '/api/register' : '/api/login';
 
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
-            const data = await res.json();
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
 
-            if (data.success) {
-                currentUser = isRegistering ? u : data.username;
-                alert("Success!");
-                showDashboard();
-            } else {
-                alert(data.message);
+                if (data.success) {
+                    // LOGIN SUCCESS
+                    currentUser = isRegistering ? u : data.username;
+                    localStorage.setItem('devstudio_user', currentUser); // Save to local storage
+                    document.getElementById('username').value = "";
+                    document.getElementById('password').value = "";
+                    errBox.innerText = "";
+                    showDashboard();
+                } else {
+                    // LOGIN FAIL
+                    errBox.innerText = data.message;
+                }
+            } catch (err) {
+                errBox.innerText = "Server error. Is Node running?";
             }
         }
 
         function logout() {
             currentUser = null;
-            document.getElementById('username').value = "";
-            document.getElementById('password').value = "";
+            localStorage.removeItem('devstudio_user'); // Clear local storage
             switchScreen('login-screen');
         }
 
@@ -173,7 +213,7 @@
         }
 
         async function showDashboard() {
-            document.getElementById('welcome-msg').innerText = `Hello, ${currentUser}`;
+            document.getElementById('welcome-msg').innerText = `Logged in as: ${currentUser}`;
             switchScreen('dashboard-screen');
             
             const res = await fetch('/api/projects');
@@ -181,20 +221,28 @@
             const list = document.getElementById('project-list');
             list.innerHTML = "";
 
+            if(projects.length === 0) {
+                list.innerHTML = "<p style='color:#666'>No projects yet. Create one!</p>";
+                return;
+            }
+
             projects.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.innerHTML = `<h3>${p.title}</h3><p>By ${p.author}</p>`;
-                // CLICKING NOW OPENS FULLSCREEN PREVIEW
                 card.onclick = () => openFullscreen(p);
                 list.appendChild(card);
             });
         }
 
         function openEditor() {
-            // Reset editors for new project
-            htmlEd.setValue(""); cssEd.setValue(""); jsEd.setValue("");
+            // Reset editors
+            htmlEd.setValue("\n<h1>Hello World</h1>"); 
+            cssEd.setValue("/* CSS here */\nh1 { color: red; }"); 
+            jsEd.setValue("// JS here\nconsole.log('Hello');");
+            
             switchScreen('editor-screen');
+            // Refresh needed to fix CodeMirror rendering glitch on hidden elements
             setTimeout(() => { htmlEd.refresh(); cssEd.refresh(); jsEd.refresh(); }, 100);
         }
 
@@ -213,7 +261,7 @@
         }
 
         async function publishProject() {
-            const title = prompt("Project Name:");
+            const title = prompt("Name your project:");
             if(!title) return;
 
             const payload = {
@@ -235,7 +283,7 @@
                 alert("Published!");
                 showDashboard();
             } else {
-                alert("Error: " + data.message); // Will show "Name taken" error
+                alert("Error: " + data.message);
             }
         }
 
@@ -254,9 +302,8 @@
         }
 
         function runPreview() {
-            // Quick preview while editing (opens in fullscreen too for ease)
             const p = {
-                title: "Preview",
+                title: "Live Preview",
                 html: htmlEd.getValue(),
                 css: cssEd.getValue(),
                 js: jsEd.getValue()
