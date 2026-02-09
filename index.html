@@ -2,72 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Local Code Studio</title>
+    <title>DevStudio Local</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/vscode-dark.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <style>
-        body { font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #222; color: #fff; }
-        
-        /* Navigation */
-        nav { background: #333; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        button { padding: 8px 15px; cursor: pointer; background: #007bff; border: none; color: white; border-radius: 4px; }
-        button:hover { background: #0056b3; }
+        :root {
+            --bg-dark: #1e1e1e;
+            --sidebar-bg: #252526;
+            --accent: #007acc;
+            --text: #cccccc;
+            --border: #3e3e42;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* Layout */
-        #app-container { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Editor Section */
-        #editors { width: 40%; display: flex; flex-direction: column; border-right: 1px solid #444; }
-        .code-box { flex: 1; display: flex; flex-direction: column; }
-        .label { background: #444; padding: 5px; font-size: 12px; font-weight: bold; }
-        
-        /* Preview Section */
-        #preview-area { width: 60%; background: white; }
-        iframe { width: 100%; height: 100%; border: none; }
+        /* --- SCREENS --- */
+        .screen { display: none; width: 100%; height: 100%; }
+        .screen.active { display: flex; }
 
-        /* Gallery Overlay (Home Page) */
-        #gallery-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 10; padding: 20px; overflow-y: auto; }
-        .project-card { background: #333; padding: 15px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; border: 1px solid #444; }
-        .project-card:hover { border-color: #007bff; }
-        .hidden { display: none; }
+        /* --- LOGIN SCREEN --- */
+        #login-screen { flex-direction: column; justify-content: center; align-items: center; background: #111; }
+        .auth-box { background: var(--sidebar-bg); padding: 30px; border-radius: 8px; border: 1px solid var(--border); width: 300px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 4px; }
+        button.primary { background: var(--accent); color: white; border: none; padding: 10px; width: 100%; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        button.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); margin-top: 10px; }
+        
+        /* --- DASHBOARD --- */
+        #dashboard-screen { flex-direction: column; padding: 40px; overflow-y: auto; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .project-card { background: var(--sidebar-bg); padding: 20px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .project-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+
+        /* --- EDITOR LAYOUT (VS Code Style) --- */
+        #editor-screen { flex-direction: row; }
+        .activity-bar { width: 50px; background: #333; display: flex; flex-direction: column; align-items: center; pt: 10px; }
+        .activity-icon { font-size: 24px; color: #858585; margin: 15px 0; cursor: pointer; }
+        .activity-icon:hover { color: white; }
+        
+        .sidebar { width: 200px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .file-item { padding: 8px 15px; cursor: pointer; font-size: 13px; display: flex; align-items: center; }
+        .file-item:hover { background: #37373d; }
+        .file-item.active { background: #37373d; color: white; border-left: 2px solid var(--accent); }
+
+        .editor-main { flex: 1; display: flex; flex-direction: column; }
+        .code-area { flex: 1; position: relative; }
+        .CodeMirror { height: 100%; font-size: 14px; }
+        .code-container { display: none; height: 100%; }
+        .code-container.active { display: block; }
+
+        /* --- FULLSCREEN PREVIEW --- */
+        #fullscreen-screen { flex-direction: column; background: white; }
+        .fs-nav { height: 40px; background: #333; display: flex; align-items: center; padding: 0 15px; }
+        .fs-title { color: white; font-weight: bold; margin-left: 20px; }
+        iframe { flex: 1; border: none; width: 100%; height: 100%; }
+
     </style>
 </head>
 <body>
 
-    <nav>
-        <div style="font-weight:bold; font-size: 1.2rem;">MyCodeStudio</div>
-        <div>
-            <button onclick="showGallery()">Home</button>
-            <button onclick="runCode()">Run Code ▶</button>
-            <button onclick="publishProject()" style="background: #28a745;">Publish</button>
-        </div>
-    </nav>
-
-    <div id="app-container">
-        <div id="editors">
-            <div class="code-box">
-                <div class="label">HTML</div>
-                <textarea id="html-code"></textarea>
-            </div>
-            <div class="code-box">
-                <div class="label">CSS</div>
-                <textarea id="css-code"></textarea>
-            </div>
-            <div class="code-box">
-                <div class="label">JS</div>
-                <textarea id="js-code"></textarea>
-            </div>
-        </div>
-        <div id="preview-area">
-            <iframe id="output-frame"></iframe>
+    <div id="login-screen" class="screen active">
+        <h1 style="color:var(--accent)">DevStudio</h1>
+        <div class="auth-box">
+            <h2 id="auth-title">Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button class="primary" onclick="handleAuth()">Submit</button>
+            <p style="font-size:12px; margin-top:15px; cursor:pointer; color:#888" onclick="toggleAuthMode()" id="auth-toggle">Need an account? Register</p>
         </div>
     </div>
 
-    <div id="gallery-overlay">
-        <h1>Community Creations</h1>
-        <button onclick="startNewProject()" style="margin-bottom: 20px;">+ Create New Project</button>
-        <div id="projects-list">Loading...</div>
+    <div id="dashboard-screen" class="screen">
+        <div class="dash-header">
+            <h1>Community Projects</h1>
+            <div>
+                <span id="welcome-msg" style="margin-right: 20px;"></span>
+                <button class="primary" style="width:auto; padding: 10px 20px;" onclick="openEditor()">+ New Project</button>
+                <button class="secondary" style="width:auto; padding: 10px 20px;" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <div id="project-list" class="project-grid"></div>
+    </div>
+
+    <div id="editor-screen" class="screen">
+        <div class="activity-bar">
+            <span class="material-icons activity-icon" onclick="showDashboard()">home</span>
+            <span class="material-icons activity-icon" onclick="publishProject()">cloud_upload</span>
+            <span class="material-icons activity-icon" onclick="runPreview()">play_arrow</span>
+        </div>
+        <div class="sidebar">
+            <div style="padding:10px; font-weight:bold; font-size:11px; color:#aaa;">EXPLORER</div>
+            <div class="file-item active" id="f-html" onclick="switchTab('html')">index.html</div>
+            <div class="file-item" id="f-css" onclick="switchTab('css')">style.css</div>
+            <div class="file-item" id="f-js" onclick="switchTab('js')">script.js</div>
+        </div>
+        <div class="editor-main">
+            <div class="code-area">
+                <div id="w-html" class="code-container active"><textarea id="html-code"></textarea></div>
+                <div id="w-css" class="code-container"><textarea id="css-code"></textarea></div>
+                <div id="w-js" class="code-container"><textarea id="js-code"></textarea></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullscreen-screen" class="screen">
+        <div class="fs-nav">
+            <button class="primary" style="width:auto; padding:5px 15px;" onclick="showDashboard()">← Back</button>
+            <span class="fs-title" id="fs-project-title">Project Name</span>
+        </div>
+        <iframe id="fullscreen-frame"></iframe>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
@@ -76,85 +121,149 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
 
     <script>
-        // 1. Initialize CodeMirror Editors
-        const htmlEditor = CodeMirror.fromTextArea(document.getElementById("html-code"), { mode: "xml", theme: "dracula", lineNumbers: true });
-        const cssEditor = CodeMirror.fromTextArea(document.getElementById("css-code"), { mode: "css", theme: "dracula", lineNumbers: true });
-        const jsEditor = CodeMirror.fromTextArea(document.getElementById("js-code"), { mode: "javascript", theme: "dracula", lineNumbers: true });
+        // GLOBAL STATE
+        let currentUser = null;
+        let isRegistering = false;
+        
+        // EDITORS
+        const conf = { theme: 'vscode-dark', lineNumbers: true };
+        const htmlEd = CodeMirror.fromTextArea(document.getElementById('html-code'), {...conf, mode: 'xml'});
+        const cssEd = CodeMirror.fromTextArea(document.getElementById('css-code'), {...conf, mode: 'css'});
+        const jsEd = CodeMirror.fromTextArea(document.getElementById('js-code'), {...conf, mode: 'javascript'});
 
-        // 2. Logic to Run Code
-        function runCode() {
-            const html = htmlEditor.getValue();
-            const css = `<style>${cssEditor.getValue()}</style>`;
-            const js = `<script>${jsEditor.getValue()}<\/script>`;
-            
-            const frame = document.getElementById("output-frame");
-            // We write the code directly into the iframe document
-            const code = `${html}\n${css}\n${js}`;
-            frame.srcdoc = code; 
+        // --- AUTH LOGIC ---
+        function toggleAuthMode() {
+            isRegistering = !isRegistering;
+            document.getElementById('auth-title').innerText = isRegistering ? "Register" : "Login";
+            document.getElementById('auth-toggle').innerText = isRegistering ? "Have an account? Login" : "Need an account? Register";
         }
 
-        // 3. Logic to Publish Code
+        async function handleAuth() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const endpoint = isRegistering ? '/api/register' : '/api/login';
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: u, password: p })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                currentUser = isRegistering ? u : data.username;
+                alert("Success!");
+                showDashboard();
+            } else {
+                alert(data.message);
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('username').value = "";
+            document.getElementById('password').value = "";
+            switchScreen('login-screen');
+        }
+
+        // --- NAVIGATION ---
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function showDashboard() {
+            document.getElementById('welcome-msg').innerText = `Hello, ${currentUser}`;
+            switchScreen('dashboard-screen');
+            
+            const res = await fetch('/api/projects');
+            const projects = await res.json();
+            const list = document.getElementById('project-list');
+            list.innerHTML = "";
+
+            projects.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.innerHTML = `<h3>${p.title}</h3><p>By ${p.author}</p>`;
+                // CLICKING NOW OPENS FULLSCREEN PREVIEW
+                card.onclick = () => openFullscreen(p);
+                list.appendChild(card);
+            });
+        }
+
+        function openEditor() {
+            // Reset editors for new project
+            htmlEd.setValue(""); cssEd.setValue(""); jsEd.setValue("");
+            switchScreen('editor-screen');
+            setTimeout(() => { htmlEd.refresh(); cssEd.refresh(); jsEd.refresh(); }, 100);
+        }
+
+        // --- EDITOR LOGIC ---
+        function switchTab(type) {
+            ['html','css','js'].forEach(t => {
+                document.getElementById(`f-${t}`).classList.remove('active');
+                document.getElementById(`w-${t}`).classList.remove('active');
+            });
+            document.getElementById(`f-${type}`).classList.add('active');
+            document.getElementById(`w-${type}`).classList.add('active');
+            
+            if(type === 'html') htmlEd.refresh();
+            if(type === 'css') cssEd.refresh();
+            if(type === 'js') jsEd.refresh();
+        }
+
         async function publishProject() {
-            const title = prompt("Name your project:");
+            const title = prompt("Project Name:");
             if(!title) return;
 
-            const data = {
-                title: title,
-                author: "User", // You would get this from a login system
-                html: htmlEditor.getValue(),
-                css: cssEditor.getValue(),
-                js: jsEditor.getValue()
+            const payload = {
+                title,
+                author: currentUser,
+                html: htmlEd.getValue(),
+                css: cssEd.getValue(),
+                js: jsEd.getValue()
             };
 
             const res = await fetch('/api/publish', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
             
-            const result = await res.json();
-            if(result.success) {
+            const data = await res.json();
+            if(data.success) {
                 alert("Published!");
-                showGallery();
+                showDashboard();
+            } else {
+                alert("Error: " + data.message); // Will show "Name taken" error
             }
         }
 
-        // 4. Logic to Show Gallery
-        async function showGallery() {
-            document.getElementById('gallery-overlay').classList.remove('hidden');
-            const res = await fetch('/api/projects');
-            const projects = await res.json();
+        // --- FULLSCREEN VIEWER ---
+        function openFullscreen(project) {
+            switchScreen('fullscreen-screen');
+            document.getElementById('fs-project-title').innerText = project.title;
             
-            const list = document.getElementById('projects-list');
-            list.innerHTML = "";
-            
-            projects.forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.innerHTML = `<h3>${p.title}</h3><p>By ${p.author} - ${p.date}</p>`;
-                card.onclick = () => loadProject(p);
-                list.appendChild(card);
-            });
+            const frame = document.getElementById('fullscreen-frame');
+            const content = `
+                ${project.html}
+                <style>${project.css}</style>
+                <script>${project.js}<\/script>
+            `;
+            frame.srcdoc = content;
         }
 
-        function startNewProject() {
-            document.getElementById('gallery-overlay').classList.add('hidden');
-            htmlEditor.setValue("");
-            cssEditor.setValue("");
-            jsEditor.setValue("");
-            runCode();
+        function runPreview() {
+            // Quick preview while editing (opens in fullscreen too for ease)
+            const p = {
+                title: "Preview",
+                html: htmlEd.getValue(),
+                css: cssEd.getValue(),
+                js: jsEd.getValue()
+            };
+            openFullscreen(p);
         }
 
-        function loadProject(project) {
-            document.getElementById('gallery-overlay').classList.add('hidden');
-            htmlEditor.setValue(project.html);
-            cssEditor.setValue(project.css);
-            jsEditor.setValue(project.js);
-            runCode();
-        }
-
-        // Load gallery on start
-        showGallery();
     </script>
 </body>
 </html>
