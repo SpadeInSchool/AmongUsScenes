@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Local Code Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    
+    <style>
+        body { font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #222; color: #fff; }
+        
+        /* Navigation */
+        nav { background: #333; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        button { padding: 8px 15px; cursor: pointer; background: #007bff; border: none; color: white; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+
+        /* Layout */
+        #app-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Editor Section */
+        #editors { width: 40%; display: flex; flex-direction: column; border-right: 1px solid #444; }
+        .code-box { flex: 1; display: flex; flex-direction: column; }
+        .label { background: #444; padding: 5px; font-size: 12px; font-weight: bold; }
+        
+        /* Preview Section */
+        #preview-area { width: 60%; background: white; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* Gallery Overlay (Home Page) */
+        #gallery-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 10; padding: 20px; overflow-y: auto; }
+        .project-card { background: #333; padding: 15px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; border: 1px solid #444; }
+        .project-card:hover { border-color: #007bff; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div style="font-weight:bold; font-size: 1.2rem;">MyCodeStudio</div>
+        <div>
+            <button onclick="showGallery()">Home</button>
+            <button onclick="runCode()">Run Code ▶</button>
+            <button onclick="publishProject()" style="background: #28a745;">Publish</button>
+        </div>
+    </nav>
+
+    <div id="app-container">
+        <div id="editors">
+            <div class="code-box">
+                <div class="label">HTML</div>
+                <textarea id="html-code"></textarea>
+            </div>
+            <div class="code-box">
+                <div class="label">CSS</div>
+                <textarea id="css-code"></textarea>
+            </div>
+            <div class="code-box">
+                <div class="label">JS</div>
+                <textarea id="js-code"></textarea>
+            </div>
+        </div>
+        <div id="preview-area">
+            <iframe id="output-frame"></iframe>
+        </div>
+    </div>
+
+    <div id="gallery-overlay">
+        <h1>Community Creations</h1>
+        <button onclick="startNewProject()" style="margin-bottom: 20px;">+ Create New Project</button>
+        <div id="projects-list">Loading...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+
+    <script>
+        // 1. Initialize CodeMirror Editors
+        const htmlEditor = CodeMirror.fromTextArea(document.getElementById("html-code"), { mode: "xml", theme: "dracula", lineNumbers: true });
+        const cssEditor = CodeMirror.fromTextArea(document.getElementById("css-code"), { mode: "css", theme: "dracula", lineNumbers: true });
+        const jsEditor = CodeMirror.fromTextArea(document.getElementById("js-code"), { mode: "javascript", theme: "dracula", lineNumbers: true });
+
+        // 2. Logic to Run Code
+        function runCode() {
+            const html = htmlEditor.getValue();
+            const css = `<style>${cssEditor.getValue()}</style>`;
+            const js = `<script>${jsEditor.getValue()}<\/script>`;
+            
+            const frame = document.getElementById("output-frame");
+            // We write the code directly into the iframe document
+            const code = `${html}\n${css}\n${js}`;
+            frame.srcdoc = code; 
+        }
+
+        // 3. Logic to Publish Code
+        async function publishProject() {
+            const title = prompt("Name your project:");
+            if(!title) return;
+
+            const data = {
+                title: title,
+                author: "User", // You would get this from a login system
+                html: htmlEditor.getValue(),
+                css: cssEditor.getValue(),
+                js: jsEditor.getValue()
+            };
+
+            const res = await fetch('/api/publish', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            const result = await res.json();
+            if(result.success) {
+                alert("Published!");
+                showGallery();
+            }
+        }
+
+        // 4. Logic to Show Gallery
+        async function showGallery() {
+            document.getElementById('gallery-overlay').classList.remove('hidden');
+            const res = await fetch('/api/projects');
+            const projects = await res.json();
+            
+            const list = document.getElementById('projects-list');
+            list.innerHTML = "";
+            
+            projects.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.innerHTML = `<h3>${p.title}</h3><p>By ${p.author} - ${p.date}</p>`;
+                card.onclick = () => loadProject(p);
+                list.appendChild(card);
+            });
+        }
+
+        function startNewProject() {
+            document.getElementById('gallery-overlay').classList.add('hidden');
+            htmlEditor.setValue("");
+            cssEditor.setValue("");
+            jsEditor.setValue("");
+            runCode();
+        }
+
+        function loadProject(project) {
+            document.getElementById('gallery-overlay').classList.add('hidden');
+            htmlEditor.setValue(project.html);
+            cssEditor.setValue(project.css);
+            jsEditor.setValue(project.js);
+            runCode();
+        }
+
+        // Load gallery on start
+        showGallery();
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+// server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
+const app = express();
+const PORT = 3000;
+
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- MOCK DATABASE ---
+// In a real app, you would use SQLite, MongoDB, or PostgreSQL
+let users = []; 
+let projects = [];
+
+// --- ROUTES ---
+
+// 1. Get all published projects for the Home Page
+app.get('/api/projects', (req, res) => {
+    res.json(projects);
+});
+
+// 2. Publish a new project
+app.post('/api/publish', (req, res) => {
+    const { title, author, html, css, js } = req.body;
+    
+    const newProject = {
+        id: Date.now(), // simple unique ID
+        title: title || "Untitled",
+        author: author || "Anonymous",
+        html,
+        css,
+        js,
+        date: new Date().toLocaleDateString()
+    };
+    
+    projects.push(newProject);
+    res.json({ success: true, message: "Project Published!" });
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});
